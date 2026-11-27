@@ -28,7 +28,7 @@ jobs:
       - name: Модульные тесты
         run: ctest --test-dir lab1/build --output-on-failure
       - name: Проверка покрытия
-        run: gcovr --root lab1 --filter 'src/(set|polynomial)\.cpp' --fail-under-line 90
+        run: gcovr --root lab1 --filter '.*src/(set|polynomial)\.cpp' --fail-under-line 90
       - name: Статический анализ
         run: cppcheck --enable=warning,style,performance,portability --error-exitcode=1 --language=c++ --std=c++17 lab1/src lab1/include
       - name: Генерация документации API
