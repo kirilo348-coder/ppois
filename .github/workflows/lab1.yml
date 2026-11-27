@@ -1,0 +1,88 @@
+name: Лабораторная работа №1
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "lab1-v*"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Проверка, тесты и покрытие
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установка инструментов проверки
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ cppcheck doxygen gcovr
+      - name: Настройка сборки
+        run: cmake -S lab1 -B lab1/build -DCMAKE_BUILD_TYPE=Debug
+      - name: Сборка
+        run: cmake --build lab1/build --parallel
+      - name: Модульные тесты
+        run: ctest --test-dir lab1/build --output-on-failure
+      - name: Проверка покрытия
+        run: gcovr --root lab1 --filter 'src/(set|polynomial)\.cpp' --fail-under-line 90
+      - name: Статический анализ
+        run: cppcheck --enable=warning,style,performance,portability --error-exitcode=1 --language=c++ --std=c++17 lab1/src lab1/include
+      - name: Генерация документации API
+        working-directory: lab1
+        run: doxygen Doxyfile
+
+  package-linux:
+    name: Сборка Linux
+    if: startsWith(github.ref, 'refs/tags/lab1-v')
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Настройка и сборка
+        run: |
+          cmake -S lab1 -B build -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+          cmake --install build --prefix package
+          tar -czf lab1-linux-x64.tar.gz -C package .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lab1-linux-x64
+          path: lab1-linux-x64.tar.gz
+
+  package-windows:
+    name: Сборка Windows
+    if: startsWith(github.ref, 'refs/tags/lab1-v')
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Настройка и сборка
+        run: |
+          cmake -S lab1 -B build -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+          cmake --install build --config Release --prefix package
+          Compress-Archive -Path package\bin\lab1_cli.exe -DestinationPath lab1-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lab1-windows-x64
+          path: lab1-windows-x64.zip
+
+  release:
+    name: Публикация релиза
+    if: startsWith(github.ref, 'refs/tags/lab1-v')
+    needs: [package-linux, package-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release-files/*

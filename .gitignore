@@ -1,0 +1,7 @@
+lab1/build/
+lab1/docs/html/
+*.exe
+*.gcda
+*.gcno
+*.gcov
+coverage.xml

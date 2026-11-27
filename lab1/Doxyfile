@@ -1,0 +1,11 @@
+PROJECT_NAME           = "Лабораторная работа №1: Множества и многочлены"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = include
+INPUT_ENCODING         = UTF-8
+OUTPUT_LANGUAGE        = Russian
+RECURSIVE              = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+WARN_IF_UNDOCUMENTED   = YES
+QUIET                  = NO
